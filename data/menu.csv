@@ -1,0 +1,124 @@
+sku_id,name,category,price,cost,substitute_group
+SKU001,Биф Тейсти,Бургеры,3100,1080,burger_beef_premium
+SKU002,Дабл Гранд Чизбургер,Бургеры,2850,1000,burger_beef_premium
+SKU003,Big Burger,Бургеры,2200,770,burger_beef_core
+SKU004,Гранд Чизбургер,Бургеры,1950,680,burger_beef_core
+SKU005,Цезарь Ролл,Бургеры,1850,650,burger_chicken
+SKU006,Чикен Классик,Бургеры,1700,600,burger_chicken
+SKU007,Дабл Чизбургер,Бургеры,1550,540,burger_beef_core
+SKU008,Чикен Тейсти Джуниор,Бургеры,2400,840,burger_chicken
+SKU009,Чизбургер,Бургеры,950,330,burger_beef_core
+SKU010,Гамбургер,Бургеры,900,320,burger_beef_core
+SKU011,Чикенбургер,Бургеры,900,320,burger_chicken
+SKU012,Биг Чикен Делюкс,Бургеры,2600,910,burger_chicken
+SKU013,Double Big Burger,Бургеры,3000,1050,burger_beef_premium
+SKU014,Биф Биг Делюкс,Бургеры,3100,1080,burger_beef_premium
+SKU015,Бифкұрт,Бургеры,2200,770,burger_beef_core
+SKU016,Чикенқұрт,Бургеры,1800,630,burger_chicken
+SKU017,Combo стрипсы 10 шт.,Combo,4050,1420,combo_chicken
+SKU018,Combo стрипсы 6 шт.,Combo,3250,1140,combo_chicken
+SKU019,Combo Биф Тейсти,Combo,4150,1450,combo_beef
+SKU020,Combo Double Big Burger,Combo,4050,1420,combo_beef
+SKU021,Combo Дабл Гранд Чизбургер,Combo,3950,1380,combo_beef
+SKU022,Combo Чикен Тейсти,Combo,3700,1300,combo_chicken
+SKU023,Combo Big Burger,Combo,3250,1140,combo_beef
+SKU024,Combo Гранд Чизбургер,Combo,3050,1070,combo_beef
+SKU025,Combo Цезарь Ролл,Combo,2850,1000,combo_chicken
+SKU026,Combo Наггетс 10 шт.,Combo,2750,960,combo_chicken
+SKU027,Combo Чикен Классик,Combo,2650,930,combo_chicken
+SKU028,Combo Дабл Чизбургер,Combo,2700,940,combo_beef
+SKU029,Combo Чикен Тейсти Джуниор,Combo,3300,1160,combo_chicken
+SKU030,Combo Наггетс 6 шт.,Combo,2350,820,combo_chicken
+SKU031,Combo Френч Дог с курицей,Combo,3250,1140,combo_chicken
+SKU032,Combo Биг Чикен Делюкс,Combo,3700,1300,combo_chicken
+SKU033,Combo Биг Делюкс,Combo,4150,1450,combo_beef
+SKU034,Стрипсы,Закуски,1400,490,snack_chicken
+SKU035,Куриные крылья,Закуски,1800,630,snack_chicken
+SKU036,Крылья (8 штук),Закуски,3550,1240,snack_chicken
+SKU037,Креветки,Закуски,1900,660,snack_seafood
+SKU038,Наггетсы,Закуски,800,280,snack_chicken
+SKU039,Картофель по-деревенски,Закуски,950,330,snack_potato
+SKU040,Картофель Фри,Закуски,650,230,snack_potato
+SKU041,Морковные палочки,Закуски,550,190,snack_veg
+SKU042,Яблочные дольки,Закуски,550,190,snack_veg
+SKU043,"Баскет 6 крыльев, 10 наггетсов",Закуски,4100,1440,snack_chicken
+SKU044,Кетчуп,Соусы,200,70,sauce
+SKU045,Соус 1000 островов,Соусы,200,70,sauce
+SKU046,Соус Барбекю,Соусы,200,70,sauce
+SKU047,Соус Горчичный,Соусы,200,70,sauce
+SKU048,Сырный соус,Соусы,200,70,sauce
+SKU049,Соус Чесночный,Соусы,200,70,sauce
+SKU050,Молочный коктейль ванильный,Холодные напитки,1050,370,drink_shake
+SKU051,Молочный коктейль Белый персик,Холодные напитки,1050,370,drink_shake
+SKU052,Молочный коктейль шоколадный,Холодные напитки,1050,370,drink_shake
+SKU053,Молочный коктейль клубничный,Холодные напитки,1050,370,drink_shake
+SKU054,Fuse Tea Манго-Ананас,Холодные напитки,600,210,drink_tea
+SKU055,Fuse Tea Манго-Ромашка,Холодные напитки,600,210,drink_tea
+SKU056,Нектар Piko Mini яблочный,Холодные напитки,500,180,drink_juice
+SKU057,Нектар Piko Mini персиковый,Холодные напитки,500,180,drink_juice
+SKU058,Нектар Piko Mini мультифруктовый,Холодные напитки,500,180,drink_juice
+SKU059,Нектар Piko Mini апельсиновый,Холодные напитки,500,180,drink_juice
+SKU060,BonAqua негазированная,Холодные напитки,450,160,drink_water
+SKU061,BonAqua газированная,Холодные напитки,450,160,drink_water
+SKU062,Sprite,Холодные напитки,450,160,drink_soda
+SKU063,Fanta,Холодные напитки,450,160,drink_soda
+SKU064,Coca-Cola без сахара,Холодные напитки,450,160,drink_soda
+SKU065,Coca-Cola,Холодные напитки,450,160,drink_soda
+SKU066,Fuse Tea Персик,Холодные напитки,450,160,drink_tea
+SKU067,Клубничный айс кофе,Холодные напитки,1200,420,drink_coffee
+SKU068,Айс Кофе,Холодные напитки,1200,420,drink_coffee
+SKU069,Капучино карамельное яблоко,I'M Café,1100,380,cafe_coffee
+SKU070,Панини с тунцом,I'M Café,2000,700,cafe_food
+SKU071,Панини с курицей,I'M Café,1900,660,cafe_food
+SKU072,Какао,I'M Café,1400,490,cafe_coffee
+SKU073,Латте,I'M Café,1300,450,cafe_coffee
+SKU074,Капучино,I'M Café,1250,440,cafe_coffee
+SKU075,Кофе с молоком,I'M Café,900,320,cafe_coffee
+SKU076,Американо,I'M Café,950,330,cafe_coffee
+SKU077,Чай кенийский,I'M Café,700,240,cafe_tea
+SKU078,Эспрессо,I'M Café,600,210,cafe_coffee
+SKU079,Френч дог с говяжим мясом,I'M Café,2150,750,cafe_food
+SKU080,Синнабон,Десерты,1300,450,dessert_pastry
+SKU081,Айс Микс Ананас,Десерты,1100,380,dessert_icecream
+SKU082,Мороженое с ананасовым наполнителем,Десерты,850,300,dessert_icecream
+SKU083,Айс Микс Шоколад,Десерты,1100,380,dessert_icecream
+SKU084,Айс Микс Карамель,Десерты,1100,380,dessert_icecream
+SKU085,Айс Микс Клубника,Десерты,1100,380,dessert_icecream
+SKU086,Мороженое с карамельным наполнителем,Десерты,850,300,dessert_icecream
+SKU087,Мороженое с шоколадным наполнителем,Десерты,850,300,dessert_icecream
+SKU088,Мороженое с клубничным наполнителем,Десерты,850,300,dessert_icecream
+SKU089,Вишнёвый пирожок,Десерты,600,210,dessert_pastry
+SKU090,Рожок,Десерты,500,180,dessert_icecream
+SKU091,Трайфл Тирамису,Десерты,1850,650,dessert_trifle
+SKU092,Трайфл Медовый,Десерты,1550,540,dessert_trifle
+SKU093,Трайфл Лесные ягоды,Десерты,1800,630,dessert_trifle
+SKU094,Айс Микс Тройная Шоколадная Крошка,Десерты,1100,380,dessert_icecream
+SKU095,Пирожок «Лесная ягода – Сливочный сыр»,Десерты,700,240,dessert_pastry
+SKU096,Коул Слоу,Салаты,1100,380,salad
+SKU097,Салат Цезарь с креветками,Салаты,1900,660,salad
+SKU098,Салат Цезарь с курицей,Салаты,1450,510,salad
+SKU099,Бифкұрт маффин,Завтраки,2050,720,breakfast_beef
+SKU100,Чикенқұрт маффин,Завтраки,1750,610,breakfast_chicken
+SKU101,Чикен Фреш Ролл,Завтраки,1850,650,breakfast_chicken
+SKU102,Фреш Ролл,Завтраки,1700,600,breakfast_chicken
+SKU103,Биф Маффин с Яйцом,Завтраки,1450,510,breakfast_beef
+SKU104,Чикен Фреш Маффин,Завтраки,1250,440,breakfast_chicken
+SKU105,Маффин с Яйцом и Ветчиной,Завтраки,1250,440,breakfast_egg
+SKU106,Биф Маффин,Завтраки,1100,380,breakfast_beef
+SKU107,Маффин с Яйцом и Сыром,Завтраки,1050,370,breakfast_egg
+SKU108,Тост с Сыром и Ветчиной,Завтраки,850,300,breakfast_toast
+SKU109,Тост с Сыром,Завтраки,650,230,breakfast_toast
+SKU110,Beef box,Завтраки,2600,910,breakfast_beef
+SKU111,Muffin box,Завтраки,2250,790,breakfast_egg
+SKU112,Toast Box,Завтраки,1400,490,breakfast_toast
+SKU113,Маффин с Омлетом и Сыром,Завтраки,1200,420,breakfast_egg
+SKU114,Маффин с омлетом и ветчиной,Завтраки,1400,490,breakfast_egg
+SKU115,Биф Маффин с омлетом,Завтраки,1600,560,breakfast_beef
+SKU116,Хашбраун,Завтраки,450,160,breakfast_toast
+SKU117,I'M Mini,I'M Mini,3150,1100,mini_box
+SKU118,Согревающий морс клюква-ирга,Горячие напитки,800,280,hotdrink_other
+SKU119,Латте белый персик,Горячие напитки,1100,380,hotdrink_coffee
+SKU120,Латте стандартный,Горячие напитки,1050,370,hotdrink_coffee
+SKU121,Глясе,Горячие напитки,800,280,hotdrink_coffee
+SKU122,Чай зелёный,Горячие напитки,400,140,hotdrink_tea
+SKU123,Чай чёрный,Горячие напитки,400,140,hotdrink_tea

@@ -1,0 +1,579 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>I'M Kazakhstan Menu Simulator</title>
+<style>
+:root{
+  --bg:#f7f5f0; --surface:#ffffff; --ink:#1f1b16; --sub:#6b6258;
+  --accent:#c4542d; --accent-ink:#ffffff; --good:#2f7a4f; --bad:#b23a3a;
+  --line:#e7e1d6; --grid:#eee8dc; --input-bg:#fcfbf8;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15130f; --surface:#1e1b16; --ink:#f3efe6; --sub:#a89d8d;
+    --accent:#e2764a; --accent-ink:#1a1008; --good:#5ab57f; --bad:#e2685f;
+    --line:#332e26; --grid:#2a261f; --input-bg:#161310;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15130f; --surface:#1e1b16; --ink:#f3efe6; --sub:#a89d8d;
+  --accent:#e2764a; --accent-ink:#1a1008; --good:#5ab57f; --bad:#e2685f;
+  --line:#332e26; --grid:#2a261f; --input-bg:#161310;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); margin:0;
+  font-family:'Manrope',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  padding-left:max(16px, env(safe-area-inset-left,0px));
+  padding-right:max(16px, env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1180px;margin:0 auto;padding-block:32px 60px}
+h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;margin:0;text-wrap:balance}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--sub);font-weight:700}
+header.top{display:flex;flex-direction:column;gap:6px;margin-bottom:24px}
+header.top h1{font-size:clamp(26px,4vw,38px)}
+header.top p{color:var(--sub);margin:0;max-width:680px;font-size:15px;line-height:1.5}
+
+.upload-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:28px;display:flex;flex-direction:column;gap:16px}
+.upload-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:700px){.upload-row{grid-template-columns:1fr}}
+.drop{border:1.5px dashed var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px;background:var(--input-bg);min-width:0}
+.drop label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--sub)}
+.drop input[type=file]{font-size:13px;color:var(--ink)}
+.drop .status{font-size:12px;color:var(--sub)}
+.drop .status.ok{color:var(--good);font-weight:600}
+.upload-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+button{font-family:inherit;font-size:13px;font-weight:700;border:none;border-radius:999px;padding:10px 20px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.msg{font-size:13px;color:var(--sub)}
+.msg.err{color:var(--bad)}
+[hidden]{display:none!important}
+
+.badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.badge{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--sub);background:var(--surface)}
+.badge.real{color:var(--good);border-color:var(--good)}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:32px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;min-width:0}
+.kpi .label{font-size:12px;color:var(--sub);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.kpi .value{font-family:'Fraunces',serif;font-size:26px;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:12px;color:var(--sub);margin-top:4px}
+
+.section{margin-bottom:40px}
+.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.section-head h2{font-size:22px}
+.section-head .note{font-size:13px;color:var(--sub)}
+
+.grid-2{display:grid;grid-template-columns:1.3fr 1fr;gap:20px}
+@media (max-width:820px){.grid-2{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;min-width:0}
+.card h3{font-size:15px;margin-bottom:12px;color:var(--ink)}
+svg text{font-family:'Manrope',sans-serif;fill:var(--ink)}
+.axis-label{font-size:11px;fill:var(--sub)}
+.grid-line{stroke:var(--grid);stroke-width:1}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--sub);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:7px 8px;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:none}
+.bar-track{height:6px;background:var(--grid);border-radius:4px;overflow:hidden;margin-top:4px}
+.bar-fill{height:100%;background:var(--accent);border-radius:4px}
+.name-cell{font-weight:600}
+.cat-tag{font-size:10px;color:var(--sub)}
+
+.sim-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:16px}
+.sim-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px;min-width:160px;flex:1}
+.field label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--sub)}
+select,input[type=number]{font-family:inherit;font-size:13px;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--input-bg);color:var(--ink)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--sub);cursor:pointer}
+.tab.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.result-kpi{background:var(--input-bg);border:1px solid var(--line);border-radius:12px;padding:14px}
+.result-kpi .label{font-size:11px;color:var(--sub);text-transform:uppercase;font-weight:700}
+.result-kpi .value{font-family:'Fraunces',serif;font-size:22px;margin-top:4px;font-variant-numeric:tabular-nums}
+.result-kpi .value.pos{color:var(--good)} .result-kpi .value.neg{color:var(--bad)}
+
+.mover-list{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.mover{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid var(--grid)}
+.mover:last-child{border-bottom:none}
+.mover .mv-val.pos{color:var(--good)} .mover .mv-val.neg{color:var(--bad)}
+
+.persona-bar{display:flex;height:22px;border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+.persona-bar div{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+.persona-legend{display:flex;gap:14px;font-size:12px;color:var(--sub);margin-top:6px;flex-wrap:wrap}
+.persona-legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+.assump{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 24px}
+.assump ol{margin:0;padding-left:20px;font-size:13px;line-height:1.7;color:var(--sub)}
+.assump li::marker{color:var(--accent);font-weight:700}
+.assump b{color:var(--ink)}
+footer{font-size:12px;color:var(--sub);text-align:center;margin-top:20px}
+
+.nav-tabs{display:flex;gap:6px;margin-bottom:28px;border-bottom:1px solid var(--line);padding-bottom:0}
+.nav-tab{font-size:14px;font-weight:700;padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--sub);cursor:pointer;border-radius:0}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.view{display:none}
+.view.active{display:block}
+
+.report-hero{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:28px}
+.report-hero .big{font-family:'Fraunces',serif;font-size:32px;margin:6px 0}
+.report-hero .big .accent{color:var(--accent)}
+
+.scn-table-wrap{overflow-x:auto}
+.scn-table{font-size:13px}
+.scn-table th{white-space:nowrap}
+.risk-pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;display:inline-block}
+.risk-pill.high{background:color-mix(in srgb, var(--bad) 18%, transparent);color:var(--bad)}
+.risk-pill.mid{background:color-mix(in srgb, #d9a441 20%, transparent);color:#b5812a}
+.risk-pill.low{background:color-mix(in srgb, var(--good) 18%, transparent);color:var(--good)}
+
+.method-list{display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--sub);line-height:1.6}
+.method-list b{color:var(--ink)}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<div class="wrap">
+
+  <header class="top">
+    <span class="eyebrow">I'M Kazakhstan · Dostyk Plaza · Menu Simulator</span>
+    <h1>Что будет с продажами?</h1>
+    <p>Загрузите два отчёта iiko за реальный день — симулятор сам откалибрует baseline спроса и посчитает what-if сценарии.</p>
+  </header>
+
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-view="simView">Симулятор</button>
+    <button class="nav-tab" data-view="reportView">Отчёт и метрики</button>
+  </div>
+
+  <div id="simView" class="view active">
+
+  <div class="upload-card">
+    <div class="upload-row">
+      <div class="drop">
+        <label>Файл 1 — выручка по часам (факт)</label>
+        <input type="file" id="fileRevenue" accept=".xlsx,.xls">
+        <span class="status" id="statusRevenue">не загружен</span>
+      </div>
+      <div class="drop">
+        <label>Файл 2 — продажи по позициям по часам</label>
+        <input type="file" id="fileSales" accept=".xlsx,.xls">
+        <span class="status" id="statusSales">не загружен</span>
+      </div>
+    </div>
+    <div class="upload-actions">
+      <button id="runCalibration" disabled>Посчитать калибровку</button>
+      <span class="msg" id="calibMsg"></span>
+    </div>
+  </div>
+
+  <div id="results" hidden>
+    <div class="badge-row" id="badgeRow"></div>
+
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>Трафик по часам</h2>
+        <span class="note" id="trafficNote"></span>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Выручка по часам, ₸</h3>
+          <svg id="hourChart" viewBox="0 0 640 260" width="100%" style="overflow:visible"></svg>
+        </div>
+        <div class="card">
+          <h3>Топ-10 позиций по факту продаж</h3>
+          <table id="topSkuTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>What-if симулятор</h2>
+        <span class="note">пересчёт мгновенно, прямо в браузере, на калиброванном baseline</span>
+      </div>
+      <div class="sim-card">
+        <div class="tabs">
+          <button class="tab active" data-scn="remove_sku">Убрать SKU</button>
+          <button class="tab" data-scn="price_change">Изменить цену</button>
+          <button class="tab" data-scn="combo">Комбо</button>
+        </div>
+        <div class="sim-controls">
+          <div class="field" id="skuField">
+            <label>Позиция (SKU)</label>
+            <select id="skuSelect"></select>
+          </div>
+          <div class="field" id="priceField" hidden>
+            <label>Изменение цены, %</label>
+            <input type="number" id="priceDelta" value="10" step="5">
+          </div>
+          <div class="field" id="comboField" hidden>
+            <label>Комбо</label>
+            <select id="comboSelect"></select>
+          </div>
+          <button id="runSim">Запустить</button>
+        </div>
+
+        <div id="simOutput"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Допущения модели</h2></div>
+    <div class="assump">
+      <ol>
+        <li><b>Эластичность спроса</b> — экспертная оценка на уровне категории, не regression по факту изменения цен (в один реальный день цены не менялись).</li>
+        <li><b>Каннибализация</b> — 55% потерянного спроса перетекает на товары той же substitute_group пропорционально их доле; 45% — чистая потеря.</li>
+        <li><b>Комбо</b> — attach rate 20% и bundling uplift +12% — экспертные предположения, требуют A/B теста.</li>
+        <li><b>AI-персоны</b> — 15 синтетических профилей гостей, качественный сигнал (риск ухода), не доказательство поведения реальных гостей.</li>
+        <li><b>Baseline спроса</b> — калибруется по факту загруженного дня на уровне SKU/категории; несопоставленные позиции — экспертный fallback по категории. Недельная сезонность — реальный прогноз iiko по часам/дням (19-25.10.2026, та же точка Dostyk Plaza), не экспертная оценка.</li>
+      </ol>
+    </div>
+  </div>
+
+  <footer>I'M Kazakhstan · Menu Simulator · KBTU X-DAI P03 · загрузите свой export iiko или нажмите "демо-данные"</footer>
+  </div>
+
+  <div id="reportView" class="view">
+
+    <div class="report-hero">
+      <span class="eyebrow">Главный вывод</span>
+      <div class="big">Без калибровки риск удаления позиции недооценён в <span class="accent">6 раз</span></div>
+      <p style="color:var(--sub);font-size:14px;margin:0">Удаление SKU001 «Биф Тейсти»: на синтетике −1.02% выручки, на реальных данных 15.10.2026 — <b style="color:var(--ink)">−6.02%</b>. Калибровка baseline — не косметика, а критичный шаг для корректных управленческих решений.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h2>Эффект калибровки на baseline</h2></div>
+      <div class="card scn-table-wrap">
+        <table class="scn-table">
+          <tr><th>Метрика</th><th>До калибровки (синтетика)</th><th>После калибровки (реальные данные)</th><th>Разница</th></tr>
+          <tr><td>Baseline-выручка/день</td><td>547 927 ₸</td><td><b>1 364 569 ₸</b></td><td style="color:var(--accent);font-weight:700">×2.49</td></tr>
+          <tr><td>Baseline-маржа/день</td><td>356 094 ₸</td><td><b>886 909 ₸</b></td><td style="color:var(--accent);font-weight:700">×2.49</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>Сводка по сценариям</h2>
+        <span class="note">на калиброванных данных, SKU001 «Биф Тейсти»</span>
+      </div>
+      <div class="card scn-table-wrap">
+        <table class="scn-table">
+          <tr><th>Сценарий</th><th>Δ Выручка</th><th>Δ Маржа</th><th>Риск (AI-персоны)</th></tr>
+          <tr>
+            <td>Убрать «Биф Тейсти»</td>
+            <td style="color:var(--bad);font-weight:700">−82 203 ₸</td>
+            <td style="color:var(--bad);font-weight:700">−53 717 ₸</td>
+            <td><span class="risk-pill high">высокий · 100% ищут замену</span></td>
+          </tr>
+          <tr>
+            <td>+10% цена на «Биф Тейсти»</td>
+            <td style="color:var(--good);font-weight:700">+511 ₸</td>
+            <td style="color:var(--good);font-weight:700">+705 ₸</td>
+            <td><span class="risk-pill mid">средний · 27% уходят</span></td>
+          </tr>
+          <tr>
+            <td>Новое комбо (Стрипсы+Фри+Кола)</td>
+            <td style="color:var(--good);font-weight:700">+199 ₸/заказ</td>
+            <td style="color:var(--good);font-weight:700">+98 ₸/заказ</td>
+            <td><span class="risk-pill low">низкий · 0% отказов</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h2>Детали по сценарию: удаление SKU</h2></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>До калибровки</h3>
+          <div class="mover-list">
+            <div class="mover"><span>Δ Выручка/день</span><span class="mv-val neg">−5 606 ₸ (−1.02%)</span></div>
+            <div class="mover"><span>Δ Маржа/день</span><span class="mv-val neg">−3 661 ₸ (−1.03%)</span></div>
+            <div class="mover"><span>Главный получатель</span><span>Биф Биг Делюкс +2 154 ₸</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>После калибровки</h3>
+          <div class="mover-list">
+            <div class="mover"><span>Δ Выручка/день</span><span class="mv-val neg">−82 203 ₸ (−6.02%)</span></div>
+            <div class="mover"><span>Δ Маржа/день</span><span class="mv-val neg">−53 717 ₸ (−6.06%)</span></div>
+            <div class="mover"><span>Главный получатель</span><span>Дабл Гранд Чизбургер +46 155 ₸</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h2>Метод тестирования</h2></div>
+      <div class="card method-list">
+        <div><b>Калибровка:</b> 269 строк реальных чеков (iiko, 15.10.2026) сопоставлены с 123 SKU канонического меню — <b style="color:var(--good)">100% match rate</b> после нормализации названий (снятие size-суффиксов, Combo-префиксов, ручной словарь исключений).</div>
+        <div><b>Повторяемость:</b> все 3 сценария прогнаны дважды — на исходном синтетическом baseline и на калиброванном — чтобы показать чувствительность модели к качеству входных данных.</div>
+        <div><b>AI-персоны:</b> 15 профилей, детерминированная эвристика (budget_sensitivity × price_delta × affinity), без LLM-вызовов — для воспроизводимости тестов на защите.</div>
+        <div><b>Источник правды:</b> реальный iiko-экспорт ресторана I'M Kazakhstan, Dostyk Plaza, предоставлен директором точки по согласованию.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h2>Допущения модели</h2></div>
+      <div class="assump">
+        <ol>
+          <li><b>Эластичность спроса</b> — экспертная оценка на уровне категории, не regression по факту изменения цен.</li>
+          <li><b>Каннибализация</b> — 55% потерянного спроса перетекает на substitute_group пропорционально доле; 45% — чистая потеря.</li>
+          <li><b>Комбо</b> — attach rate 20%, bundling uplift +12% — экспертные предположения, требуют A/B теста.</li>
+          <li><b>AI-персоны</b> — качественный сигнал, не доказательство поведения реальных гостей.</li>
+          <li><b>Baseline</b> — калиброван по одному реальному дню + реальной недельной сезонности; остальное — синтетика.</li>
+        </ol>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="engine.js"></script>
+<script>
+let state = { baseline: null, catCalib: null, skuCalib: null, revenueRows: null, matchedSales: null, scenario: "remove_sku" };
+
+const el = (id) => document.getElementById(id);
+
+document.querySelectorAll(".nav-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    tab.classList.add("active");
+    el(tab.dataset.view).classList.add("active");
+  });
+});
+
+el("fileRevenue").addEventListener("change", () => checkFiles());
+el("fileSales").addEventListener("change", () => checkFiles());
+
+function checkFiles() {
+  const r = el("fileRevenue").files[0], s = el("fileSales").files[0];
+  el("statusRevenue").textContent = r ? r.name : "не загружен";
+  el("statusRevenue").className = "status" + (r ? " ok" : "");
+  el("statusSales").textContent = s ? s.name : "не загружен";
+  el("statusSales").className = "status" + (s ? " ok" : "");
+  el("runCalibration").disabled = !(r && s);
+}
+
+el("runCalibration").addEventListener("click", async () => {
+  try {
+    el("calibMsg").textContent = "читаю файлы...";
+    el("calibMsg").className = "msg";
+    const revRows = await readWorkbook(el("fileRevenue").files[0]);
+    const salesRows = await readWorkbook(el("fileSales").files[0]);
+    const revenue = parseHourlyRevenue(revRows);
+    const sales = parseHourlySales(salesRows);
+    if (!revenue.length || !sales.length) throw new Error("не удалось распознать строки — проверь, что это те самые iiko-отчёты");
+    runWithData(revenue, sales);
+  } catch (e) {
+    el("calibMsg").textContent = "Ошибка: " + e.message;
+    el("calibMsg").className = "msg err";
+  }
+});
+
+function runWithData(revenue, salesRows) {
+  const matchedRaw = matchToMenu(salesRows);
+  const matchedN = matchedRaw.filter(r => r.matched_sku).length;
+  el("calibMsg").textContent = `сопоставлено ${matchedN}/${matchedRaw.length} строк чеков с меню (${Math.round(matchedN/matchedRaw.length*100)}%)`;
+  runWithMatched(revenue, matchedRaw);
+}
+
+function runWithMatched(revenue, matched) {
+  const { catCalib, skuCalib } = calibrate(matched);
+  const baseline = computeBaseline(catCalib, skuCalib);
+  state = { ...state, baseline, catCalib, skuCalib, revenueRows: revenue };
+
+  renderResults(revenue, matched, baseline);
+  el("results").hidden = false;
+}
+
+function fmt(n) { return Math.round(n).toLocaleString("ru-RU"); }
+function fmtSigned(n) { const s = Math.round(n).toLocaleString("ru-RU"); return n >= 0 ? "+" + s : s; }
+
+function renderResults(revenue, matched, baseline) {
+  const totalRevenue = revenue.reduce((s, r) => s + r.revenue, 0);
+  const totalGuests = revenue.reduce((s, r) => s + r.guests, 0);
+  const avgCheck = totalGuests ? totalRevenue / totalGuests : 0;
+  const totalBaselineDaily = MENU.reduce((s, r) => s + baseline[r.sku_id] * r.price, 0);
+
+  el("badgeRow").innerHTML = `
+    <span class="badge real">● реальные данные iiko</span>
+    <span class="badge">123 SKU · 11 категорий</span>
+    <span class="badge">15 AI-персон</span>`;
+
+  el("kpiGrid").innerHTML = `
+    <div class="kpi"><div class="label">Выручка за день</div><div class="value">${fmt(totalRevenue)} ₸</div><div class="sub">из загруженного отчёта</div></div>
+    <div class="kpi"><div class="label">Гостей</div><div class="value">${totalGuests}</div><div class="sub">за ${revenue.length} часов работы</div></div>
+    <div class="kpi"><div class="label">Средний чек</div><div class="value">${fmt(avgCheck)} ₸</div><div class="sub">выручка / гости</div></div>
+    <div class="kpi"><div class="label">Калиброванный baseline</div><div class="value">${fmt(totalBaselineDaily)} ₸</div><div class="sub">симулятор, по меню × цены</div></div>`;
+
+  el("trafficNote").textContent = `реальная выручка и гости, ${revenue.length} часов`;
+
+  renderHourChart(revenue);
+  renderTopSkuTable(matched);
+  populateSkuSelect();
+  populateComboSelect();
+  runSimulation();
+}
+
+function renderHourChart(revenue) {
+  const svg = el("hourChart");
+  const W=640,H=260,padL=50,padR=16,padT=16,padB=30;
+  const max = Math.max(...revenue.map(r => r.revenue));
+  const gap = (W-padL-padR)/revenue.length;
+  const bw = gap*0.68;
+  let s = "";
+  for(let i=0;i<=4;i++){
+    const y = padT + (H-padT-padB)*(1-i/4);
+    s += `<line class="grid-line" x1="${padL}" x2="${W-padR}" y1="${y}" y2="${y}"/>`;
+    s += `<text class="axis-label" x="${padL-6}" y="${y+3}" text-anchor="end">${Math.round(max*i/4/1000)}k</text>`;
+  }
+  revenue.forEach((r,i)=>{
+    const h = (r.revenue/max)*(H-padT-padB);
+    const x = padL + i*gap + (gap-bw)/2;
+    const y = H-padB-h;
+    s += `<rect x="${x}" y="${y}" width="${bw}" height="${h}" rx="3" fill="var(--accent)"/>`;
+    if(i%2===0) s += `<text class="axis-label" x="${x+bw/2}" y="${H-padB+16}" text-anchor="middle">${r.hour}</text>`;
+  });
+  svg.innerHTML = s;
+}
+
+function renderTopSkuTable(matched) {
+  const bySku = {};
+  matched.forEach(r => { const id = r.sku_id || r.matched_sku; if (id) bySku[id] = (bySku[id]||0) + r.qty; });
+  const rows = Object.entries(bySku).map(([id, qty]) => {
+    const m = MENU.find(x => x.sku_id === id);
+    return m ? { name: m.name, category: m.category, price: m.price, qty } : null;
+  }).filter(Boolean).sort((a,b) => b.qty - a.qty).slice(0, 10);
+  const max = Math.max(...rows.map(r => r.qty), 1);
+  let html = "<tr><th>Позиция</th><th>Шт.</th></tr>";
+  rows.forEach(r => {
+    const pct = Math.round(r.qty/max*100);
+    html += `<tr><td><div class="name-cell">${r.name}</div><div class="cat-tag">${r.category} · ${fmt(r.price)} ₸</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></td><td style="text-align:right;font-weight:700">${r.qty}</td></tr>`;
+  });
+  el("topSkuTable").innerHTML = html;
+}
+
+function populateSkuSelect() {
+  const sel = el("skuSelect");
+  sel.innerHTML = MENU.map(m => `<option value="${m.sku_id}">${m.name} (${m.category})</option>`).join("");
+  sel.value = "SKU001";
+}
+function populateComboSelect() {
+  const sel = el("comboSelect");
+  sel.innerHTML = COMBOS.map(c => `<option value="${c.combo_id}">${c.name}</option>`).join("");
+}
+
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    state.scenario = tab.dataset.scn;
+    el("skuField").hidden = state.scenario === "combo";
+    el("priceField").hidden = state.scenario !== "price_change";
+    el("comboField").hidden = state.scenario !== "combo";
+    if (state.baseline) runSimulation();
+  });
+});
+el("runSim").addEventListener("click", runSimulation);
+
+function runSimulation() {
+  if (!state.baseline) return;
+  const { baseline } = state;
+  if (state.scenario === "remove_sku") {
+    const skuId = el("skuSelect").value;
+    const target = MENU.find(m => m.sku_id === skuId);
+    const results = simulateRemoval(baseline, skuId);
+    const summary = summarize(results);
+    const movers = topMovers(results.filter(r => r.sku_id !== skuId), 3);
+    const personas = simulatePersonas(target.category, 0, true);
+    renderScenario(summary, movers, personas, `Убрать «${target.name}» из меню`);
+  } else if (state.scenario === "price_change") {
+    const skuId = el("skuSelect").value;
+    const pct = parseFloat(el("priceDelta").value) / 100;
+    const target = MENU.find(m => m.sku_id === skuId);
+    const results = simulatePriceChange(baseline, skuId, pct);
+    const summary = summarize(results);
+    const movers = topMovers(results, 4);
+    const personas = simulatePersonas(target.category, pct, false);
+    renderScenario(summary, movers, personas, `Изменить цену «${target.name}» на ${pct>=0?"+":""}${Math.round(pct*100)}%`);
+  } else {
+    const comboId = el("comboSelect").value;
+    const res = simulateCombo(baseline, comboId);
+    renderCombo(res);
+  }
+}
+
+function renderScenario(summary, movers, personas, title) {
+  const revClass = summary.revenue_delta >= 0 ? "pos" : "neg";
+  const marClass = summary.margin_delta >= 0 ? "pos" : "neg";
+  const moversHtml = movers.map(m => {
+    const delta = m.new_revenue - m.base_revenue;
+    const cls = delta >= 0 ? "pos" : "neg";
+    return `<div class="mover"><span>${m.name}</span><span class="mv-val ${cls}">${fmtSigned(m.demand_delta_pct)}% спроса · ${fmtSigned(delta)} ₸</span></div>`;
+  }).join("");
+
+  el("simOutput").innerHTML = `
+    <h3 style="margin-top:4px">${title}</h3>
+    <div class="result-grid">
+      <div class="result-kpi"><div class="label">Δ Выручка/день</div><div class="value ${revClass}">${fmtSigned(summary.revenue_delta)} ₸</div></div>
+      <div class="result-kpi"><div class="label">Δ Выручка %</div><div class="value ${revClass}">${fmtSigned(summary.revenue_delta_pct)}%</div></div>
+      <div class="result-kpi"><div class="label">Δ Маржа/день</div><div class="value ${marClass}">${fmtSigned(summary.margin_delta)} ₸</div></div>
+      <div class="result-kpi"><div class="label">Δ Маржа %</div><div class="value ${marClass}">${fmtSigned(summary.margin_delta_pct)}%</div></div>
+    </div>
+    <div class="card" style="margin-top:4px">
+      <h3>Топ-движения по SKU (каннибализация)</h3>
+      <div class="mover-list">${moversHtml}</div>
+    </div>
+    ${renderPersonaBar(personas)}
+  `;
+}
+
+function renderCombo(res) {
+  const revClass = res.revenue_delta >= 0 ? "pos" : "neg";
+  const marClass = res.margin_delta >= 0 ? "pos" : "neg";
+  el("simOutput").innerHTML = `
+    <h3 style="margin-top:4px">${res.combo.name}</h3>
+    <div class="result-grid">
+      <div class="result-kpi"><div class="label">Δ Выручка/заказ</div><div class="value ${revClass}">${fmtSigned(res.revenue_delta)} ₸</div></div>
+      <div class="result-kpi"><div class="label">Δ Маржа/заказ</div><div class="value ${marClass}">${fmtSigned(res.margin_delta)} ₸</div></div>
+      <div class="result-kpi"><div class="label">Цена комбо</div><div class="value">${fmt(res.combo.combo_price)} ₸</div></div>
+      <div class="result-kpi"><div class="label">Attach rate / uplift</div><div class="value">${res.assumed_attach_rate*100}% · +${Math.round((res.assumed_bundling_uplift-1)*100)}%</div></div>
+    </div>
+    <div class="card" style="margin-top:4px">
+      <h3>Состав комбо</h3>
+      <div class="mover-list">${res.items.map(it => `<div class="mover"><span>${it.name}</span><span>${fmt(it.price)} ₸</span></div>`).join("")}</div>
+    </div>
+  `;
+}
+
+function renderPersonaBar(p) {
+  return `
+    <div class="card" style="margin-top:4px">
+      <h3>Реакция AI-персон (15 гостей)</h3>
+      <div class="persona-bar">
+        <div style="width:${p.accept_pct}%;background:var(--good)">${p.accept_pct?p.accept_pct+'%':''}</div>
+        <div style="width:${p.switch_pct}%;background:#d9a441">${p.switch_pct?p.switch_pct+'%':''}</div>
+        <div style="width:${p.leave_pct}%;background:var(--bad)">${p.leave_pct?p.leave_pct+'%':''}</div>
+      </div>
+      <div class="persona-legend">
+        <span><span class="dot" style="background:var(--good)"></span>принимают</span>
+        <span><span class="dot" style="background:#d9a441"></span>переключаются</span>
+        <span><span class="dot" style="background:var(--bad)"></span>уходят</span>
+      </div>
+    </div>`;
+}
+</script>

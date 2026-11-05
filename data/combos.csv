@@ -1,0 +1,5 @@
+combo_id,name,sku_ids,base_price_sum,combo_price,discount_pct
+COMBO01,Новое Комбо: Стрипсы + Фри + Кола,SKU034|SKU040|SKU065,2500,2100,0.15
+COMBO02,Новое Комбо: Завтрак дуо,SKU109|SKU076,1600,1400,0.12
+COMBO03,Новое Комбо: Салат + сок,SKU098|SKU059,1950,1750,0.1
+COMBO04,Новое Комбо: Сладкая пара,SKU080|SKU068,2500,2300,0.08
