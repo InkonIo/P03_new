@@ -22,7 +22,10 @@ ASSUMPTIONS = """## Допущения модели
    (бюджетная чувствительность, лояльность, предпочтения категорий). Их реакция —
    качественный сигнал (разногласия, risk of churn), **не доказательство поведения реальных
    гостей**. Используется как second opinion поверх эконометрики, не как замена.
-5. **Baseline продаж** — среднее по 75 дням истории с учётом дня недели, без учёта праздников,
+5. **Промо** — эффект новой акции оценивается по аналогам из реальной истории одного ресторана за 92 дня
+   (только итоги по дням, акции шли внахлёст), окупаемость скидки ресторана считается по ценам из писем агрегаторов
+   и допущению себестоимости 35% цены. Это ориентир для A/B-теста, не прогноз.
+6. **Baseline продаж** — среднее по 75 дням истории с учётом дня недели, без учёта праздников,
    погоды, маркетинговых акций, конкурентного давления.
 """
 
@@ -70,6 +73,18 @@ def generate_report(scenario_result: dict, output_name: str = None) -> Path:
             lines += ["", "**Примеры возражений:**"]
             for obj in personas["sample_objections"]:
                 lines.append(f"- {obj}")
+
+    if scenario.get("type") in ("promo", "promo_history"):
+        lines += ["", "## Опора на реальные данные", "_Dostyk Plaza, 01.06–31.08.2026: эффект акции на общих чеках ресторана; "
+                  "акции шли внахлёст, сезонность не отделена._"]
+        if scenario_result.get("analogs"):
+            lines += ["", f"Аналоги ({scenario_result.get('analogs_used')}):", "| Акция | Канал | Скидка гостю | Δ гостей | Δ чека | Δ выручки |", "|---|---|---|---|---|---|"]
+            for a in scenario_result["analogs"]:
+                lines.append(f"| {a['name']} | {a['channel']} | {a['guest_discount_pct']}% | {a['checks_pct']}% | {a['avg_check_pct']}% | {a['net_pct']}% |")
+        if scenario_result.get("normal_fluctuation_pct"):
+            lines += ["", f"Обычные колебания без акций (10–90 перцентиль): {scenario_result['normal_fluctuation_pct']}"]
+        if scenario_result.get("caveat"):
+            lines += ["", f"**Оговорка:** {scenario_result['caveat']}"]
 
     mf = scenario_result.get("mirofish")
     if mf and mf.get("ok"):

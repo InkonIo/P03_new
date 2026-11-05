@@ -68,6 +68,10 @@ def _poll(stage, fn, done, failed, timeout_s, interval=4.0, progress_cb=None):
     raise MiroFishError(stage, f"таймаут {timeout_s} с")
 
 
+_FUND = {"пополам": "split between the restaurant and the delivery app", "агрегатор": "the delivery app",
+         "ресторан": "the restaurant"}
+
+
 def build_seed(result: dict) -> str:
     """Текст-«семя» для MiroFish: из него строится граф сущностей (рестораны, сегменты гостей, конкуренты).
     Описываем действующих лиц явно, иначе онтология получится пустой."""
@@ -79,6 +83,10 @@ def build_seed(result: dict) -> str:
         change = f"the price of '{sc.get('sku_name')}' changes by {sc.get('price_delta_pct', 0) * 100:+.0f}%"
     elif kind == "remove_sku":
         change = f"the item '{sc.get('sku_name')}' is REMOVED from the menu"
+    elif kind in ("promo", "promo_history"):
+        change = (f"a promotion is launched: {sc.get('guest_discount_pct', 0):.0f}% discount for the guest via "
+                  f"{sc.get('channel')} (paid by: {_FUND.get(sc.get('funded_by'), sc.get('funded_by'))}), for {sc.get('duration_days', 14)} days")
+        econ = {k: v for k, v in econ.items() if isinstance(v, (int, float))}
     else:
         change = f"a new combo is launched: {sc.get('combo_name') or sc.get('combo_id')}"
 
@@ -96,7 +104,7 @@ in the same malls and streets. Many guests also order through delivery apps.
 ## The change under discussion
 Next month {change}.
 
-Economic baseline (estimated by an elasticity model, per day, one restaurant):
+Economic baseline / expected effect (per day, one restaurant; from an elasticity model or from past promos):
 {', '.join(f'{k}={v}' for k, v in econ.items())}
 
 ## Guests (each is a separate person in the community who discusses the change online)

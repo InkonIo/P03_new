@@ -22,6 +22,8 @@ from typing import Callable, Optional
 
 import pandas as pd
 
+import promo_engine
+
 from elasticity import load_data
 from simulator import TOOLS, TOOL_IMPL
 
@@ -34,6 +36,8 @@ EXAMPLES = [
     "Что будет, если поднять цену на {sku} на 10%?",
     "Что если убрать {sku} из меню?",
     "Что даст комбо {combo}?",
+    "Как сработала акция Yandex −40% на Бифкурт и Чикенкурт?",
+    "Что если запустить скидку 30% на доставке в Glovo на 2 недели?",
 ]
 
 
@@ -111,8 +115,11 @@ def _system_prompt(menu: pd.DataFrame) -> str:
     combos = pd.read_csv(DATA_DIR / "combos.csv")[["combo_id", "name"]].to_string(index=False)
     menu_ctx = menu[["sku_id", "name", "category", "price"]].to_string(index=False)
     return (
-        "You are a restaurant menu what-if analyst for a fast-food chain. You have tools to simulate price "
-        "changes, SKU removal and combo launches. Always call a tool for what-if questions, never guess numbers. "
+        "You are a restaurant menu and marketing what-if analyst for a fast-food chain. You have tools to simulate price "
+        "changes, SKU removal, combo launches, to read how PAST promotions performed in the real data (promo_history) "
+        "and to estimate a NEW promotion by analogs (simulate_promo). Always call a tool for what-if questions, never "
+        "guess numbers. For promos say clearly that effects are measured on the restaurant's total guests, promos "
+        "overlapped, and 'как обычно' means indistinguishable from normal fluctuation. "
         "After the tool result, answer in Russian in plain business language: revenue/margin impact, "
         "cannibalization (where demand moves), guest reaction, and one sentence on how reliable this is "
         "(it is a model estimate, not a forecast).\n\n"
@@ -178,6 +185,8 @@ def _run_llm(run: AgentRun, tr: _Tracer, client, use_thinking: bool, menu: pd.Da
 # ----------------------------------------------------------------------------- rules mode
 _NEG = re.compile(r"(снизи|уменьш|скидк|дешевле|удешев|минус|[-−–]\s*\d+\s*%)", re.I)
 _REMOVE = re.compile(r"(убрат|удал|вывест|исключ|снять с меню|remove)", re.I)
+_PROMO = re.compile(r"(акци|промо|promo|yandex|яндекс|glovo|глово|wolt|волт|агрегатор|на доставк|i'?m cup|имкап)", re.I)
+_HIST = re.compile(r"(как сработал|как прошл|как отработ|как показал|результат|итог|что было|сработал|эффект акци|был[аио]?\b)", re.I)
 _PRICE = re.compile(r"(цен|поднят|повыс|подорож|снизи|удешев|price)", re.I)
 
 
@@ -190,13 +199,17 @@ def _run_rules(run: AgentRun, tr: _Tracer, menu: pd.DataFrame) -> None:
            "позицию меню и процент. Расчёт тот же, что и в режиме LLM.")
 
     combo = next((r for _, r in combos.iterrows()
-                  if str(r["name"]).lower() in ql or str(r["combo_id"]).lower() in ql), None)
+                  if str(r["name"]).lower() in ql or str(r["name"]).split(": ", 1)[-1].lower() in ql
+                  or str(r["combo_id"]).lower() in ql), None)
     sku_hits = [r for _, r in menu.iterrows() if str(r["name"]).lower() in ql or str(r["sku_id"]).lower() in ql]
     sku = max(sku_hits, key=lambda r: len(str(r["name"]))) if sku_hits else None
     pct_m = re.search(r"(\d+(?:[.,]\d+)?)\s*%", q)
     pct = float(pct_m.group(1).replace(",", ".")) / 100 if pct_m else None
 
-    if combo is not None and ("комбо" in ql or sku is None):
+    promo_hit = _PROMO.search(q) is not None and "комбо" not in ql
+    if promo_hit:
+        kind = "promo_history" if (_HIST.search(q) and promo_engine.event_by_id(ql)) else "promo"
+    elif combo is not None and ("комбо" in ql or sku is None):
         kind = "combo"
     elif "комбо" in ql:
         combo, kind = combos.iloc[0], "combo"
@@ -216,7 +229,29 @@ def _run_rules(run: AgentRun, tr: _Tracer, menu: pd.DataFrame) -> None:
         return
 
     notes = []
-    if kind == "combo":
+    if kind == "promo_history":
+        ev = promo_engine.event_by_id(ql)
+        tool, args = "promo_history", {"promo": ev["id"]}
+        plan = f"Тип: итог прошлой акции · «{ev['name']}» ({ev['id']}), старт {ev['start']}"
+    elif kind == "promo":
+        ch = next((c for c in promo_engine.CHANNELS if c.lower() in ql or
+                   {"Yandex": "яндекс", "Glovo": "глово", "Wolt": "волт"}.get(c, "~") in ql), None)
+        if ch is None:
+            ch = "Yandex" if "доставк" in ql else "Ресторан"
+            notes.append(f"канал не указан, беру {ch}")
+        disc = pct * 100 if pct is not None else None
+        if disc is None:
+            disc = 30.0
+            notes.append("размер скидки не указан, беру 30%")
+        dm = re.search(r"(\d+)\s*(недел|нед|дн)", ql)
+        days = 14
+        if dm:
+            days = int(dm.group(1)) * (7 if dm.group(2).startswith("нед") else 1)
+        elif "недел" in ql:
+            days = 14 if "две" in ql or "2 " in ql else 7
+        tool, args = "simulate_promo", {"channel": ch, "guest_discount_pct": round(disc, 1), "duration_days": days}
+        plan = f"Тип: новая акция · канал {ch} · скидка гостю {disc:.0f}% · {days} дн."
+    elif kind == "combo":
         tool, args = "simulate_combo", {"combo_id": combo["combo_id"]}
         plan = f"Тип: запуск комбо · комбо: «{combo['name']}» ({combo['combo_id']})"
     else:
@@ -253,6 +288,8 @@ def compose_answer(res: dict, notes: Optional[list] = None) -> str:
         return f"Инструмент вернул ошибку: {res['error']}"
     sc, econ, per = res.get("scenario", {}), res.get("econometric", {}), res.get("persona_simulation", {})
     kind = sc.get("type")
+    if kind in ("promo", "promo_history"):
+        return _compose_promo(res, notes)
     if kind == "price_change":
         head = f"**Цена «{sc.get('sku_name')}» {sc.get('price_delta_pct', 0) * 100:+.0f}%**"
     elif kind == "remove_sku":
@@ -286,6 +323,43 @@ def compose_answer(res: dict, notes: Optional[list] = None) -> str:
                "выручка и маржа двигаются в разные стороны, решает приоритет")
     lines += ["", f"Вывод: {verdict}. Это оценка модели на допущениях (эластичность по категориям, "
                   f"калибровка по одному дню), а не прогноз; проверять A/B-тестом."]
+    if notes:
+        lines += ["", "_Допущения агента: " + "; ".join(notes) + "._"]
+    return "\n".join(lines)
+
+
+_VERDICT = {"up": "выросло заметнее обычных колебаний", "down": "упало сильнее обычных колебаний",
+            "flat": "в пределах обычных колебаний (не отличить от случайности)"}
+
+
+def _compose_promo(res: dict, notes: Optional[list] = None) -> str:
+    sc, econ, per = res["scenario"], res["econometric"], res.get("persona_simulation", {})
+    lines = []
+    if sc["type"] == "promo_history":
+        v, n = res["verdict"], res["normal_fluctuation_pct"]
+        lines += [f"**Как сработала акция: {sc['name']}** (старт {sc['start']})", "",
+                  f"- Гостей в день: {econ['checks_per_day_before']} → {econ['checks_per_day_after']} "
+                  f"(**{econ['checks_delta_pct']:+.1f}%**): {_VERDICT[v['checks']]}",
+                  f"- Средний чек: {econ['avg_check_before']:,} → {econ['avg_check_after']:,} ₸ "
+                  f"(**{econ['avg_check_delta_pct']:+.1f}%**): {_VERDICT[v['avg_check']]}",
+                  f"- Выручка в день: **{econ['revenue_delta']:+,.0f} ₸** ({econ['revenue_delta_pct']:+.1f}%)",
+                  f"- Обычные колебания без акций: гости от {n['checks'][0]:+.0f}% до {n['checks'][1]:+.0f}%"]
+        be = res.get("breakeven_same_channel") or []
+        if be:
+            lines.append(f"- По прогнозам маркетинга в этом канале по марже окупается {sum(b['pays_off'] for b in be)} из {len(be)} позиций")
+        lines += ["", f"Оговорка: {res['caveat']}."]
+    else:
+        lines += [f"**Новая акция: {sc['name']}**, {sc['duration_days']} дн., скидку оплачивает: {sc['funded_by']}", "",
+                  f"- Гостей в день: **{econ['checks_delta_pct']:+.1f}%** (диапазон аналогов {econ['checks_delta_range_pct'][0]:+.1f}…{econ['checks_delta_range_pct'][1]:+.1f}%)",
+                  f"- Выручка в день: **{econ['revenue_delta']:+,.0f} ₸** ({econ['revenue_delta_pct']:+.1f}%), за период около {econ['revenue_delta_period']:+,.0f} ₸"]
+        if econ.get("breakeven_item_uplift_pct") is not None:
+            lines.append(f"- Скидка ресторана {econ['restaurant_discount_pct']:.0f}% к цене: чтобы окупилась по марже, продажи акционных позиций "
+                         f"должны вырасти минимум на **{econ['breakeven_item_uplift_pct']}%** (себестоимость принята {econ['food_cost_ratio_assumed'] * 100:.0f}% цены)")
+        else:
+            lines.append("- Скидку платит агрегатор: ресторан в цене не теряет (комиссии и условия договора не учтены)")
+        if per:
+            lines.append(f"- AI-персоны: воспользуются {per.get('accept_pct', 0)}%, присмотрятся {per.get('switch_pct', 0)}%, не заметят {per.get('leave_pct', 0)}%")
+        lines += ["", f"Опора: {res['analogs_n']} акций из истории ({res['analogs_used']}). {res['caveat']}"]
     if notes:
         lines += ["", "_Допущения агента: " + "; ".join(notes) + "._"]
     return "\n".join(lines)

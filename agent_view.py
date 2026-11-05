@@ -93,6 +93,8 @@ def pipeline_html(run: AgentRun) -> str:
 def _kpis(result: dict) -> str:
     econ = result.get("econometric", {})
     items = []
+    if "checks_delta_pct" in econ:
+        items.append(f'<div>гостей в день<b>{_signed(econ["checks_delta_pct"], "%")}</b></div>')
     if "revenue_delta" in econ:
         items.append(f'<div>Δ выручка/день<b>{_signed(econ["revenue_delta"])}</b></div>')
     if "margin_delta" in econ:
@@ -142,8 +144,37 @@ def stats_caption(run: AgentRun) -> str:
     return f"⏱ {run.elapsed:.1f} с · 🔧 вызовов инструмента: {run.tool_calls} · режим: {mode}{tok}"
 
 
+def render_promo_panel(result: dict) -> None:
+    sc, econ = result.get("scenario", {}), result.get("econometric", {})
+    st.markdown("##### 📈 Что агент увидел")
+    st.caption(f"{sc.get('name', '')} · старт {sc.get('start', 'новая акция')}")
+    c1, c2 = st.columns(2)
+    c1.metric("Гостей в день", f"{econ.get('checks_delta_pct', 0):+.1f}%")
+    c2.metric("Выручка в день", f"{econ.get('revenue_delta', 0):+,.0f} ₸", f"{econ.get('revenue_delta_pct', 0):+.1f}%")
+    an = result.get("analogs")
+    if an:
+        names = [a["name"].split(":")[0] + " " + a["id"][-5:] for a in an]
+        vals = [a["checks_pct"] for a in an]
+        fig = go.Figure(go.Bar(x=vals, y=names, orientation="h", marker_color=["#10b981" if x >= 0 else "#ef4444" for x in vals],
+                               text=[f"{x:+.1f}%" for x in vals], textposition="outside", cliponaxis=False))
+        pad = max(abs(x) for x in vals) * 0.3 or 1
+        fig.update_xaxes(range=[min(0, min(vals)) - pad, max(0, max(vals)) + pad])
+        fig.update_layout(title="Аналоги: Δ гостей в день, %", height=260, margin=dict(l=0, r=30, t=40, b=0), yaxis=dict(autorange="reversed"))
+        st.plotly_chart(fig, use_container_width=True, key=f"an_{id(result)}")
+    per = result.get("persona_simulation")
+    if per:
+        labels = per.get("labels") or ["Примут", "Переключатся", "Уйдут"]
+        vals = [per.get("accept_pct", 0), per.get("switch_pct", 0), per.get("leave_pct", 0)]
+        fig = go.Figure(go.Pie(labels=labels, values=vals, hole=.55, sort=False, marker=dict(colors=["#10b981", "#f59e0b", "#94a3b8"]),
+                               textinfo="text", text=[f"{x}%" if x else "" for x in vals]))
+        fig.update_layout(title="Реакция 15 AI-персон гостей", height=240, margin=dict(l=0, r=0, t=40, b=0))
+        st.plotly_chart(fig, use_container_width=True, key=f"pp_{id(result)}")
+
+
 def render_result_panel(result: dict) -> None:
     """Правая колонка: что агент увидел в результате инструмента."""
+    if result.get("scenario", {}).get("type") in ("promo", "promo_history"):
+        return render_promo_panel(result)
     econ = result.get("econometric", {})
     per = result.get("persona_simulation", {})
     sc = result.get("scenario", {})
@@ -169,7 +200,7 @@ def render_result_panel(result: dict) -> None:
         st.plotly_chart(fig, use_container_width=True, key=f"mv_{id(result)}")
 
     if per:
-        fig = go.Figure(go.Pie(labels=["Примут", "Переключатся", "Уйдут"],
+        fig = go.Figure(go.Pie(labels=per.get("labels") or ["Примут", "Переключатся", "Уйдут"],
                                values=[per.get("accept_pct", 0), per.get("switch_pct", 0), per.get("leave_pct", 0)],
                                hole=.55, marker=dict(colors=["#10b981", "#f59e0b", "#ef4444"]), sort=False,
                                textinfo="text",

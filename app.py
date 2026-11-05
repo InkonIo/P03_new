@@ -9,6 +9,7 @@ from agent_trace import run_agent, EXAMPLES
 import agent_view
 from report import generate_report
 import mirofish_adapter
+import promo_view
 
 st.set_page_config(page_title="Menu What-If Simulator", layout="wide")
 st.title("🍔 Menu What-If Simulator — P03")
@@ -17,7 +18,10 @@ st.caption("Симуляция изменения цен, комбо, удале
 menu, sales = load_data()
 combos = pd.read_csv("data/combos.csv")
 
-tab_scenario, tab_agent, tab_mf, tab_data = st.tabs(["📊 Сценарий", "🤖 Спроси агента", "🧪 MiroFish (эксперимент)", "📋 Данные"])
+tab_promo, tab_scenario, tab_agent, tab_mf, tab_data = st.tabs(["📣 Промо-аналитика", "📊 Сценарий", "🤖 Спроси агента", "🧪 MiroFish (эксперимент)", "📋 Данные"])
+
+with tab_promo:
+    promo_view.render()
 
 with tab_scenario:
     col_left, col_right = st.columns([1, 2])
@@ -51,7 +55,9 @@ with tab_scenario:
         if "run" in dir() and run and "result" in dir():
             st.session_state["last_result"] = result
 
-        if "last_result" in st.session_state:
+        if st.session_state.get("last_result", {}).get("scenario", {}).get("type") == "promo":
+            promo_view.render_promo_result(st.session_state["last_result"], key="sc")
+        elif "last_result" in st.session_state:
             result = st.session_state["last_result"]
             econ = result.get("econometric", {})
             personas = result.get("persona_simulation", {})
@@ -91,7 +97,7 @@ with tab_scenario:
 
 with tab_agent:
     st.subheader("🤖 Агент-аналитик: спроси словами и посмотри, как он думает")
-    st.caption("Один агент с тремя инструментами (цена, удаление позиции, комбо). Он сам выбирает инструмент, "
+    st.caption("Один агент с пятью инструментами (цена, удаление позиции, комбо, итог прошлой акции, новая акция). Он сам выбирает инструмент, "
                "расчёт делает наш код, агент только решает и объясняет. Каждый шаг виден ниже.")
     agent_view.show_html(st, agent_view.CSS)
 
@@ -101,10 +107,11 @@ with tab_agent:
 
     first_sku = menu["name"].iloc[0]
     first_combo = combos["name"].iloc[0]
-    ex_cols = st.columns(len(EXAMPLES))
-    for i, tpl in enumerate(EXAMPLES):
-        text = tpl.format(sku=first_sku, combo=first_combo)
-        ex_cols[i].button(text, key=f"ex{i}", on_click=_pick, args=(text,), use_container_width=True)
+    for row in range(0, len(EXAMPLES), 3):
+        ex_cols = st.columns(3)
+        for j, tpl in enumerate(EXAMPLES[row:row + 3]):
+            text = tpl.format(sku=first_sku, combo=first_combo)
+            ex_cols[j].button(text, key=f"ex{row + j}", on_click=_pick, args=(text,), use_container_width=True)
 
     in_col, btn_col = st.columns([5, 1])
     question = in_col.text_input("Вопрос", key="agent_q", label_visibility="collapsed",

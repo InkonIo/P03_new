@@ -5,7 +5,8 @@ import json
 import pandas as pd
 
 from elasticity import load_data, run_scenario, summarize, Scenario, baseline_daily_avg
-from personas import simulate_personas, reactions_summary
+from personas import simulate_personas, reactions_summary, simulate_promo_personas, promo_reactions_summary
+import promo_engine
 
 DATA_DIR = Path(__file__).parent / "data"
 
@@ -104,6 +105,21 @@ def simulate_combo(combo_id: str) -> dict:
     }
 
 
+def simulate_promo(channel: str, guest_discount_pct: float, funded_by: str = "", duration_days: int = 14) -> dict:
+    """Новая акция: ориентир по аналогам из реальной истории (promo_engine) + реакция 15 AI-персон."""
+    out = promo_engine.forecast_promo(channel, guest_discount_pct, funded_by, duration_days)
+    if "error" in out:
+        return out
+    sc = out["scenario"]
+    out["persona_simulation"] = promo_reactions_summary(simulate_promo_personas(sc["channel"], sc["guest_discount_pct"]))
+    return out
+
+
+def promo_history(promo: str) -> dict:
+    """Факт по прошлой акции: что было с гостями, чеком и выручкой после старта + окупаемость по прогнозу маркетинга."""
+    return promo_engine.promo_history(promo)
+
+
 def _top_movers(results, n=5):
     sorted_results = sorted(results, key=lambda r: abs(r.revenue_delta), reverse=True)[:n]
     return [
@@ -151,7 +167,35 @@ TOOLS = [
     },
 ]
 
+PROMO_IDS = "; ".join(f"{e['id']} = {e['name']}" for e in promo_engine.EVENTS)
+TOOLS += [
+    {
+        "name": "promo_history",
+        "description": "How a PAST promotion actually performed in the real data of one restaurant (Dostyk Plaza, Jun-Aug 2026): "
+                       "guests per day, average check and revenue before/after the start, versus normal fluctuation. "
+                       f"Known promos: {PROMO_IDS}.",
+        "input_schema": {"type": "object", "properties": {"promo": {"type": "string", "description": "promo id, e.g. yandex_aug04"}},
+                         "required": ["promo"]},
+    },
+    {
+        "name": "simulate_promo",
+        "description": "Estimate the effect of a NEW promotion by analogs from past promos (same channel, similar discount). "
+                       "Returns expected change of guests/average check/revenue per day with a range, break-even uplift for "
+                       "restaurant-funded discounts, and reactions of 15 AI personas. This is an orientation, not a forecast.",
+        "input_schema": {"type": "object", "properties": {
+            "channel": {"type": "string", "enum": promo_engine.CHANNELS},
+            "guest_discount_pct": {"type": "number", "description": "discount the guest sees, in percent, e.g. 30"},
+            "funded_by": {"type": "string", "enum": promo_engine.FUNDING,
+                          "description": "who pays: ресторан, пополам (typical Yandex/Wolt), агрегатор (typical Glovo). Omit for the channel default"},
+            "duration_days": {"type": "integer", "description": "promo length in days, default 14"}},
+            "required": ["channel", "guest_discount_pct"]},
+    },
+]
+
 TOOL_IMPL = {
+    "promo_history": lambda args: promo_history(args["promo"]),
+    "simulate_promo": lambda args: simulate_promo(args["channel"], args["guest_discount_pct"],
+                                                   args.get("funded_by", ""), args.get("duration_days", 14)),
     "simulate_price_change": lambda args: simulate_price_change(args["sku_id"], args["price_delta_pct"]),
     "simulate_removal": lambda args: simulate_removal(args["sku_id"]),
     "simulate_combo": lambda args: simulate_combo(args["combo_id"]),

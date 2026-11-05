@@ -118,6 +118,51 @@ React in character. Respond ONLY with JSON: {{"reaction": "accept"|"switch_subst
     return reactions
 
 
+# --- promo layer: how guests react to a promotion (not a price change) -------------------------------
+PROMO_LABELS = ["Воспользуются акцией", "Присмотрятся", "Не заметят"]
+
+
+def _heuristic_promo_reaction(persona: dict, channel: str, discount_pct: float) -> PersonaReaction:
+    """Без ключа: интерес к акции растёт с чувствительностью к цене и глубиной скидки; в доставке сильнее у delivery-гостей."""
+    pull = persona["budget_sensitivity"] * (discount_pct / 30.0)
+    if channel != "Ресторан":
+        pull *= 1.6 if "Delivery" in persona["name"] else 0.8
+    if persona["loyalty"] < 0.35:
+        pull *= 1.15   # у нелояльных скидка чаще решает, куда пойти
+    name = persona["name"]
+    if pull >= 0.45:
+        return PersonaReaction(persona["id"], name, "accept", f"{name} заметит акцию и закажет именно по ней", None)
+    if pull >= 0.2:
+        return PersonaReaction(persona["id"], name, "switch_substitute", f"{name} присмотрится: возьмёт, если акция совпадёт с тем, что хочет", None)
+    return PersonaReaction(persona["id"], name, "leave", f"{name} не обратит внимания и закажет как обычно", None)
+
+
+def simulate_promo_personas(channel: str, discount_pct: float) -> list[PersonaReaction]:
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        return [_heuristic_promo_reaction(p, channel, discount_pct) for p in PERSONAS]
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+    except Exception:
+        return [_heuristic_promo_reaction(p, channel, discount_pct) for p in PERSONAS]
+    out = []
+    for persona in PERSONAS:
+        prompt = f"""You simulate a fast-food guest in Almaty reacting to a promotion.
+Persona: {persona['name']}; price sensitivity {persona['budget_sensitivity']} (0-1); loyalty {persona['loyalty']} (0-1); likes: {', '.join(persona['prefers'])}.
+Promotion: {discount_pct:.0f}% discount for the guest, channel: {channel}.
+Respond ONLY with JSON: {{"reaction": "accept"|"switch_substitute"|"leave", "objection": "<one sentence in Russian, in character>"}}
+accept = will use the promo, switch_substitute = will look at it and maybe use, leave = will not notice or care."""
+        try:
+            msg = client.messages.create(model="claude-sonnet-4-5", max_tokens=200, messages=[{"role": "user", "content": prompt}])
+            text = msg.content[0].text.strip()
+            data = json.loads(text[text.find("{"):text.rfind("}") + 1])
+            out.append(PersonaReaction(persona["id"], persona["name"], data.get("reaction", "switch_substitute"), data.get("objection", ""), None))
+        except Exception:
+            out.append(_heuristic_promo_reaction(persona, channel, discount_pct))
+    return out
+
+
 def reactions_summary(reactions: list[PersonaReaction]) -> dict:
     total = len(reactions)
     accept = sum(1 for r in reactions if r.reaction == "accept")
@@ -130,6 +175,14 @@ def reactions_summary(reactions: list[PersonaReaction]) -> dict:
         "leave_pct": round(leave / total * 100, 1),
         "sample_objections": [r.objection for r in reactions if r.reaction != "accept"][:5],
     }
+
+
+def promo_reactions_summary(reactions: list[PersonaReaction]) -> dict:
+    """Тот же формат, но с подписями для акции (accept=воспользуются, switch=присмотрятся, leave=не заметят)."""
+    s = reactions_summary(reactions)
+    s["labels"] = PROMO_LABELS
+    s["sample_objections"] = [r.objection for r in reactions][:5]
+    return s
 
 
 if __name__ == "__main__":
